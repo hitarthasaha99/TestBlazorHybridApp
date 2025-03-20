@@ -1,0 +1,174 @@
+﻿@page "/"
+@inject IJSRuntime JS
+@using Newtonsoft.Json
+@using System.Net.Http.Headers
+@using Models
+
+@code {
+    private List<tbl_fsu_list> fsuList = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        List<TestBlazorHybridApp.Models.tbl_fsu_list> fsuData = new();
+        string requestString = $"HealthSurvey/{Constants.ActionFetchFSULIST}?v_userId={SessionDetail.UserID}&v_surveyId={SessionDetail.SurveyID}";
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionDetail.Token);
+        var response = await client.GetAsync(Constants.APIHEALTHURL + requestString);
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            fsuList = JsonConvert.DeserializeObject<List<Models.tbl_fsu_list>>(responseContent);
+        }
+        else
+        {
+            // Handle error
+        }
+
+        isLoading = false;
+    }
+}
+
+<style>
+    /* Full-page layout with padding */
+    .fsu-container {
+        width: 100%;
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* Header section */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        background-color: #001f3f; /* Deep navy blue */
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn:hover {
+        background-color: #003366;
+    }
+
+    /* Table container fills available space, allows scrolling */
+    .table-container {
+        flex-grow: 1; /* Takes up all available space */
+        overflow-y: auto; /* Scrollable */
+        border: 1px solid #ddd;
+    }
+
+    /* Fix table width to prevent resizing */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed; /* Ensures fixed column width */
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+        white-space: nowrap; /* Prevents text wrapping */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Adds "..." for overflowed text */
+    }
+
+    th {
+        background-color: lightgray;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    /* Set explicit column widths to prevent resizing */
+    th:nth-child(1), td:nth-child(1) { width: 12%; }
+    th:nth-child(2), td:nth-child(2) { width: 12%; }
+    th:nth-child(3), td:nth-child(3) { width: 16%; }
+    th:nth-child(4), td:nth-child(4) { width: 12%; }
+    th:nth-child(5), td:nth-child(5) { width: 12%; }
+    th:nth-child(6), td:nth-child(6) { width: 20%; }
+    th:nth-child(7), td:nth-child(7) { width: 16%; }
+
+    /* Loading state */
+    .loading {
+        text-align: center;
+        font-size: 1.2rem;
+        padding: 20px;
+    }
+</style>
+
+<div class="fsu-container">
+    <div class="header">
+        <h2>FSU List</h2>
+        <div class="button-group">
+            <button class="btn">SCH 0.0</button>
+            <button class="btn">SCH 25</button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+            <div class="loading">Loading data...</div>
+    }
+    else
+    {
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sub Round</th>
+                            <th>FSUID</th>
+                            <th>Village/Town</th>
+                            <th>IV Unit</th>
+                            <th>Block</th>
+                            <th>Frame Population</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in fsuList)
+                    {
+                                <tr>
+                                    <td>@item.SubRnd</td>
+                                    <td>@item.Fsu_id</td>
+                                    <td>@item.Tvn</td>
+                                    <td>@item.iv_unit</td>
+                                    <td>@item.Block</td>
+                                    <td>@item.FramePop</td>
+                                    <td>@item.lookupFsuSubmitStatus</td>
+                                </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+    }
+</div>
